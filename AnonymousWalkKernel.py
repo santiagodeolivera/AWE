@@ -4,7 +4,7 @@ import networkx as nx
 import random, time, math, os, sys
 import numpy as np
 from sklearn import svm
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 from sklearn.model_selection import train_test_split
 import argparse
 import re
@@ -799,6 +799,39 @@ class Evaluation(object):
             print(y_test_pred)
         return val_scores[max_idx], accuracy_score(y_test, y_test_pred), C_grid[max_idx]
 
+    def run_SVM_v2(self,
+                K_train, K_val, K_test, y_train, y_val, y_test, K_train_val, y_train_val):
+        '''Run SVM on kernel matrix using train-val-test split.'''
+
+        C_grid = [0.001, 0.01, 0.1, 1, 10]
+        val_scores = []
+        for i in range(len(C_grid)):
+            # Train a model on Train data
+            model = svm.SVC(kernel='precomputed', C=C_grid[i])
+            model.fit(K_train, y_train)
+
+            # Predict a model on Validation data
+            y_val_pred = model.predict(K_val)
+            val_scores.append(accuracy_score(y_val, y_val_pred))
+
+        # re-train a model on Train + Validation data
+        max_idx = np.argmax(val_scores)
+        model = svm.SVC(kernel='precomputed', C=C_grid[max_idx])
+        model.fit(K_train_val, y_train_val)
+
+        # Predict the final model on Test data
+        y_test_pred = model.predict(K_test)
+        if self.verbose:
+            print(y_test_pred)
+        return ( \
+            val_scores[max_idx], \
+            accuracy_score(y_test, y_test_pred), \
+            precision_score(y_test, y_test_pred), \
+            recall_score(y_test, y_test_pred), \
+            f1_score(y_test, y_test_pred), \
+            C_grid[max_idx] \
+        )
+
     def evaluate(self, k=10):
         '''
         Performs k-fold cross-validation of kernel matrix using SVM model.
@@ -815,6 +848,22 @@ class Evaluation(object):
                 print("Scored {} on validation and {} on test with C = {}".format(val, acc, c_max))
         return accs
 
+    def evaluate_v2(self, k=10):
+        '''
+        Performs k-fold cross-validation of kernel matrix using SVM model.
+        :param k: number of folds
+        :return: list of k accuracies on a test split.
+        '''
+        gen = self.kfold(k=k)
+
+        results = []
+        for ix, (K_train, K_val, K_test, y_train, y_val, y_test, K_train_val, y_train_val) in enumerate(gen):
+            val, acc, prec, recall, f1, c_max = self.run_SVM_v2(K_train, K_val, K_test, y_train, y_val, y_test, K_train_val, y_train_val)
+            result = {"acc": acc, "prec": prec, "recall": recall, "f1": f1}
+            results.append(result)
+            if self.verbose:
+                print("Scored {} on validation and {} on test with C = {}".format(val, result, c_max))
+        return results
 
 if __name__ == '__main__':
     np.random.seed(0)
