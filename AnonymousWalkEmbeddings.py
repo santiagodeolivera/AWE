@@ -35,6 +35,21 @@ from sklearn.model_selection import train_test_split
 
 SEED = 2018
 
+if __name__ != "__main__":
+    # SECTION Extra
+    RESULTS_FOLDER = "doc2vec_results"
+    dataset = "mutag"
+
+    if not os.path.exists(RESULTS_FOLDER):
+        os.makedirs(RESULTS_FOLDER)
+
+    if not os.path.exists(RESULTS_FOLDER + '/' + dataset):
+        os.makedirs(RESULTS_FOLDER + '/' + dataset)
+
+    if not os.path.exists(RESULTS_FOLDER + '/' + dataset + '/tmp/'):
+        os.makedirs(RESULTS_FOLDER + '/' + dataset + '/tmp/')
+    # END SECTION extra
+
 class AWE(object):
     '''
     Computes distributed Anonymous Walk Embeddings.
