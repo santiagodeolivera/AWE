@@ -21,7 +21,11 @@ import threading
 from collections import Counter
 
 import numpy as np
-import tensorflow as tf
+
+try:
+    import tensorflow.compat.v1 as tf
+except ModuleNotFoundError:
+    import tensorflow as tf
 
 from AnonymousWalkKernel import AnonymousWalks, GraphKernel, Evaluation
 
@@ -30,6 +34,21 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 SEED = 2018
+
+if __name__ != "__main__":
+    # SECTION Extra
+    RESULTS_FOLDER = "doc2vec_results"
+    dataset = "mutag"
+
+    if not os.path.exists(RESULTS_FOLDER):
+        os.makedirs(RESULTS_FOLDER)
+
+    if not os.path.exists(RESULTS_FOLDER + '/' + dataset):
+        os.makedirs(RESULTS_FOLDER + '/' + dataset)
+
+    if not os.path.exists(RESULTS_FOLDER + '/' + dataset + '/tmp/'):
+        os.makedirs(RESULTS_FOLDER + '/' + dataset + '/tmp/')
+    # END SECTION extra
 
 class AWE(object):
     '''
@@ -147,8 +166,8 @@ class AWE(object):
         self.nodes_per_graphs = dict()
 
         label_suffix = ''
-        if graph_labels is not None:
-            label_suffix = '_' + graph_labels
+        if self.graph_labels is not None:
+            label_suffix = '_' + self.graph_labels
 
         if self.regenerate_corpus == True or not os.path.exists(self.ROOT + self.dataset + '_corpus' + label_suffix):
             if not os.path.exists(self.ROOT + self.dataset + '_corpus' + label_suffix):
@@ -162,7 +181,7 @@ class AWE(object):
                 self.nodes_per_graphs[en] = len(g2v.graph)
 
 
-                g2v.write_corpus(self.neiborhood_size, self.walk_ids, steps, self.graph_labels,
+                g2v.write_corpus(self.neiborhood_size, self.walk_ids, self.steps, self.graph_labels,
                                  self.ROOT + self.dataset + '_corpus{}/{}'.format(label_suffix, self.corpus_fn_name.format(en)))
 
     def _init_graph(self):
@@ -263,7 +282,7 @@ class AWE(object):
             label_suffix = '_' + graph_labels
 
         while True:
-            batch_data, batch_labels = self.g2v.generate_file_batch(batch_size, window_size, self.doc_id,
+            batch_data, batch_labels = self.g2v.generate_file_batch(self.batch_size, self.window_size, self.doc_id,
                                                                     self.ROOT + self.dataset + '_corpus{}/{}'.format(label_suffix, self.corpus_fn_name.format(self.doc_id)),
                                                                     self.nodes_per_graphs[self.doc_id])
             # batch_data, batch_labels = self.g2v.generate_random_batch(batch_size=self.batch_size,

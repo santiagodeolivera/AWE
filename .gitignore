@@ -1,1 +1,4 @@
-./ipynb_checkpoints/
+__pycache__/
+.ipynb_checkpoints/
+Datasets/mutag_corpus/
+doc2vec_results/
